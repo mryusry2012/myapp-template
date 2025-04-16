@@ -1,7 +1,3 @@
-import { fontFamily } from "tailwindcss/defaultTheme"
-import forms from "@tailwindcss/forms"
-import animate from "tailwindcss-animate"
-
 /** @type {import('tailwindcss').Config} */
 export default {
   content: [
@@ -10,23 +6,20 @@ export default {
   ],
   theme: {
     extend: {
-      fontFamily: {
-        sans: ["Inter", ...fontFamily.sans],
-      },
       colors: {
-        background: "var(--background)",
-        foreground: "var(--foreground)",
-        card: "var(--card)",
-        "card-foreground": "var(--card-foreground)",
-        input: "var(--input)",
-        ring: "var(--ring)",
-        border: "var(--border)",
-        muted: "var(--muted)",
-        "muted-foreground": "var(--muted-foreground)",
-        primary: "var(--primary)",
-        "primary-foreground": "var(--primary-foreground)",
+        background: "#f9fafb",
+        foreground: "#111827",
+        card: "#ffffff",
+        "card-foreground": "#1f2937",
+        input: "#f3f4f6",
+        ring: "#3b82f6",
+        border: "#e5e7eb",
+        muted: "#f3f4f6",
+        "muted-foreground": "#6b7280",
+        primary: "#3b82f6",
+        "primary-foreground": "#ffffff",
       },
     },
   },
-  plugins: [forms, animate],
+  plugins: [],
 }
