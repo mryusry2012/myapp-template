@@ -1,24 +1,21 @@
-import React, { useState } from 'react'
-import api from '../services/api'
-import { getReferralUID } from '../utils/cookies' // ✅ case betul, lowercase
-import { Input } from '@/components/ui/input'
-import { Button } from '@/components/ui/button'
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardContent
-} from '@/components/ui/card'
+import React, { useState } from "react"
+import { useNavigate } from "react-router-dom"
+import api from "@/services/api"
+import { getReferralUID } from "@/utils/cookies"
 
 function Register() {
   const [form, setForm] = useState({
-    name: '',
-    email: '',
-    password: ''
+    firstName: "",
+    lastName: "",
+    dob: "",
+    gender: "",
+    phone: "",
+    email: "",
+    password: "",
   })
 
-  const [error, setError] = useState('')
-  const [success, setSuccess] = useState('')
+  const [error, setError] = useState("")
+  const navigate = useNavigate()
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value })
@@ -26,73 +23,103 @@ function Register() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    setError('')
-    setSuccess('')
+    setError("")
 
     try {
-      const referralUID = getReferralUID() // ✅ dapat dari cookie
+      const referralUID = getReferralUID()
 
-      const res = await api.post('/auth/register', {
+      await api.post("/auth/register", {
         ...form,
         referredBy: referralUID || null,
       })
 
-      setSuccess(`Register success! Member ID: ${res.data.referralUID}`)
+      alert("Registration successful!")
+      navigate("/login")
     } catch (err) {
-      setError(err.response?.data?.message || 'Register failed')
+      setError(err.response?.data?.message || "Registration failed")
     }
   }
 
   return (
     <div className="min-h-screen bg-background text-foreground flex items-center justify-center px-4">
-      <Card className="w-full max-w-md border bg-card text-card-foreground shadow-lg">
-        <CardHeader>
-          <CardTitle className="text-2xl text-center">Register</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block mb-1 text-sm">Name</label>
-              <Input
-                type="text"
-                name="name"
-                value={form.name}
-                onChange={handleChange}
-                placeholder="Your name"
-              />
-            </div>
+      <div className="w-full max-w-xl bg-white shadow-lg rounded-lg p-8 space-y-6 fade-in">
+        <h1 className="text-2xl font-bold text-center">Create an Account</h1>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <input
+              type="text"
+              name="firstName"
+              onChange={handleChange}
+              value={form.firstName}
+              placeholder="First Name"
+              className="w-full p-2 border rounded-md bg-input"
+            />
+            <input
+              type="text"
+              name="lastName"
+              onChange={handleChange}
+              value={form.lastName}
+              placeholder="Last Name"
+              className="w-full p-2 border rounded-md bg-input"
+            />
+          </div>
 
-            <div>
-              <label className="block mb-1 text-sm">Email</label>
-              <Input
-                type="email"
-                name="email"
-                value={form.email}
-                onChange={handleChange}
-                placeholder="you@example.com"
-              />
-            </div>
+          <input
+            type="date"
+            name="dob"
+            onChange={handleChange}
+            value={form.dob}
+            className="w-full p-2 border rounded-md bg-input"
+          />
 
-            <div>
-              <label className="block mb-1 text-sm">Password</label>
-              <Input
-                type="password"
-                name="password"
-                value={form.password}
-                onChange={handleChange}
-                placeholder="Create a password"
-              />
-            </div>
+          <select
+            name="gender"
+            onChange={handleChange}
+            value={form.gender}
+            className="w-full p-2 border rounded-md bg-input"
+          >
+            <option value="">Select Gender</option>
+            <option value="male">Male</option>
+            <option value="female">Female</option>
+          </select>
 
-            {error && <p className="text-red-500 text-sm">{error}</p>}
-            {success && <p className="text-green-500 text-sm">{success}</p>}
+          <input
+            type="tel"
+            name="phone"
+            onChange={handleChange}
+            value={form.phone}
+            placeholder="Phone Number"
+            className="w-full p-2 border rounded-md bg-input"
+          />
 
-            <Button type="submit" className="w-full">
-              Register
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+          <input
+            type="email"
+            name="email"
+            onChange={handleChange}
+            value={form.email}
+            placeholder="Email"
+            className="w-full p-2 border rounded-md bg-input"
+          />
+
+          <input
+            type="password"
+            name="password"
+            onChange={handleChange}
+            value={form.password}
+            placeholder="Password"
+            className="w-full p-2 border rounded-md bg-input"
+          />
+
+          {error && <p className="text-red-500 text-sm">{error}</p>}
+
+          <button
+            type="submit"
+            className="w-full bg-primary text-white py-2 rounded-md hover:bg-primary/90"
+          >
+            Register
+          </button>
+        </form>
+      </div>
     </div>
   )
 }

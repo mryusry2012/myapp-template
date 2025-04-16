@@ -2,19 +2,34 @@
 @tailwind components;
 @tailwind utilities;
 
-@layer base {
-  :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 47.4% 11.2%;
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 47.4% 11.2%;
-    --input: 222.2 47.4% 11.2%;
-    --ring: 222.2 47.4% 11.2%;
-    --border: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
-  }
-  
+/* 🎯 Letak di BAWAH @tailwind untuk override betul */
+
+:root {
+  --background: #f9fafb;
+  --foreground: #111827;
+  --card: #ffffff;
+  --card-foreground: #1f2937;
+  --input: #f3f4f6;
+  --ring: #3b82f6;
+  --border: #e5e7eb;
+  --muted: #f3f4f6;
+  --muted-foreground: #6b7280;
+  --primary: #3b82f6;
+  --primary-foreground: #ffffff;
+}
+
+body {
+  @apply bg-background text-foreground font-sans antialiased;
+}
+
+input, textarea, select, button {
+  @apply focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 transition duration-200;
+}
+
+button {
+  @apply px-4 py-2 rounded-md bg-primary text-white hover:bg-primary/90;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  @apply font-semibold text-foreground;
 }
