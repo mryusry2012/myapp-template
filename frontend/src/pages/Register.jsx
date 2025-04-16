@@ -1,120 +1,151 @@
-import React, { useState } from "react"
+import React from "react"
 import { useNavigate } from "react-router-dom"
+import { useForm } from "react-hook-form"
+import { yupResolver } from "@hookform/resolvers/yup"
+import * as yup from "yup"
 import api from "@/services/api"
 import { getReferralUID } from "@/utils/cookies"
 
-function Register() {
-  const [form, setForm] = useState({
-    firstName: "",
-    lastName: "",
-    dob: "",
-    gender: "",
-    phone: "",
-    email: "",
-    password: "",
-  })
+// ✅ Validation Schema
+const schema = yup.object().shape({
+  firstName: yup.string().required("First name is required"),
+  lastName: yup.string().required("Last name is required"),
+  dob: yup.string().required("Date of birth is required"),
+  gender: yup.string().oneOf(["Male", "Female"], "Please select gender").required("Gender is required"),
+  countryCode: yup.string().required("Country code is required"),
+  phone: yup.string().required("Phone number is required"),
+  email: yup.string().email("Invalid email").required("Email is required"),
+  password: yup.string().min(6, "Password must be at least 6 characters").required("Password is required"),
+})
 
-  const [error, setError] = useState("")
+function Register() {
   const navigate = useNavigate()
 
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value })
-  }
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    getValues,
+  } = useForm({
+    resolver: yupResolver(schema),
+  })
 
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-    setError("")
-
+  const onSubmit = async (data) => {
     try {
       const referralUID = getReferralUID()
+      const fullPhone = `${data.countryCode}${data.phone}`
 
       await api.post("/auth/register", {
-        ...form,
+        ...data,
+        phone: fullPhone,
         referredBy: referralUID || null,
       })
 
       alert("Registration successful!")
       navigate("/login")
     } catch (err) {
-      setError(err.response?.data?.message || "Registration failed")
+      alert(err.response?.data?.message || "Registration failed")
     }
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex items-center justify-center px-4">
+    <div className="min-h-screen bg-gray-100 text-gray-800 flex items-center justify-center px-4">
       <div className="w-full max-w-xl bg-white shadow-lg rounded-lg p-8 space-y-6 fade-in">
         <h1 className="text-2xl font-bold text-center">Create an Account</h1>
-        <form onSubmit={handleSubmit} className="space-y-4">
+
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
-            <input
-              type="text"
-              name="firstName"
-              onChange={handleChange}
-              value={form.firstName}
-              placeholder="First Name"
-              className="w-full p-2 border rounded-md bg-input"
-            />
-            <input
-              type="text"
-              name="lastName"
-              onChange={handleChange}
-              value={form.lastName}
-              placeholder="Last Name"
-              className="w-full p-2 border rounded-md bg-input"
-            />
+            <div>
+              <label className="block mb-1 text-sm">First Name</label>
+              <input
+                type="text"
+                {...register("firstName")}
+                className="w-full p-2 border rounded-md bg-white"
+                placeholder="John"
+              />
+              {errors.firstName && <p className="text-red-500 text-sm">{errors.firstName.message}</p>}
+            </div>
+            <div>
+              <label className="block mb-1 text-sm">Last Name</label>
+              <input
+                type="text"
+                {...register("lastName")}
+                className="w-full p-2 border rounded-md bg-white"
+                placeholder="Doe"
+              />
+              {errors.lastName && <p className="text-red-500 text-sm">{errors.lastName.message}</p>}
+            </div>
           </div>
 
-          <input
-            type="date"
-            name="dob"
-            onChange={handleChange}
-            value={form.dob}
-            className="w-full p-2 border rounded-md bg-input"
-          />
+          <div>
+            <label className="block mb-1 text-sm">Date of Birth (DOB)</label>
+            <input
+              type="date"
+              {...register("dob")}
+              className="w-full p-2 border rounded-md bg-white"
+            />
+            {errors.dob && <p className="text-red-500 text-sm">{errors.dob.message}</p>}
+          </div>
 
-          <select
-            name="gender"
-            onChange={handleChange}
-            value={form.gender}
-            className="w-full p-2 border rounded-md bg-input"
-          >
-            <option value="">Select Gender</option>
-            <option value="male">Male</option>
-            <option value="female">Female</option>
-          </select>
+          <div>
+            <label className="block mb-1 text-sm">Gender</label>
+            <select {...register("gender")} className="w-full p-2 border rounded-md bg-white">
+              <option value="">Select Gender</option>
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+            </select>
+            {errors.gender && <p className="text-red-500 text-sm">{errors.gender.message}</p>}
+          </div>
 
-          <input
-            type="tel"
-            name="phone"
-            onChange={handleChange}
-            value={form.phone}
-            placeholder="Phone Number"
-            className="w-full p-2 border rounded-md bg-input"
-          />
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block mb-1 text-sm">Country Code</label>
+              <select {...register("countryCode")} className="w-full p-2 border rounded-md bg-white">
+                <option value="">Select Country</option>
+                <option value="+60">🇲🇾 Malaysia (+60)</option>
+                <option value="+65">🇸🇬 Singapore (+65)</option>
+                <option value="+62">🇮🇩 Indonesia (+62)</option>
+                <option value="+66">🇹🇭 Thailand (+66)</option>
+              </select>
+              {errors.countryCode && <p className="text-red-500 text-sm">{errors.countryCode.message}</p>}
+            </div>
+            <div>
+              <label className="block mb-1 text-sm">Phone Number</label>
+              <input
+                type="text"
+                {...register("phone")}
+                className="w-full p-2 border rounded-md bg-white"
+                placeholder="123456789"
+              />
+              {errors.phone && <p className="text-red-500 text-sm">{errors.phone.message}</p>}
+            </div>
+          </div>
 
-          <input
-            type="email"
-            name="email"
-            onChange={handleChange}
-            value={form.email}
-            placeholder="Email"
-            className="w-full p-2 border rounded-md bg-input"
-          />
+          <div>
+            <label className="block mb-1 text-sm">Email</label>
+            <input
+              type="email"
+              {...register("email")}
+              className="w-full p-2 border rounded-md bg-white"
+              placeholder="you@email.com"
+            />
+            {errors.email && <p className="text-red-500 text-sm">{errors.email.message}</p>}
+          </div>
 
-          <input
-            type="password"
-            name="password"
-            onChange={handleChange}
-            value={form.password}
-            placeholder="Password"
-            className="w-full p-2 border rounded-md bg-input"
-          />
-
-          {error && <p className="text-red-500 text-sm">{error}</p>}
+          <div>
+            <label className="block mb-1 text-sm">Password</label>
+            <input
+              type="password"
+              {...register("password")}
+              className="w-full p-2 border rounded-md bg-white"
+              placeholder="******"
+            />
+            {errors.password && <p className="text-red-500 text-sm">{errors.password.message}</p>}
+          </div>
 
           <button
             type="submit"
-            className="w-full bg-primary text-white py-2 rounded-md hover:bg-primary/90"
+            className="w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700"
           >
             Register
           </button>

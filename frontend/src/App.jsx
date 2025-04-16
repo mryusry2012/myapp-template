@@ -12,7 +12,7 @@ import UpdatePassword from "./pages/UpdatePassword"
 function App() {
   return (
     <BrowserRouter>
-      <div className="min-h-screen bg-background text-foreground flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gray-100 text-gray-800 flex items-center justify-center p-4">
         <Routes>
           <Route path="/register" element={<Register />} />
           <Route path="/login" element={<Login />} />
