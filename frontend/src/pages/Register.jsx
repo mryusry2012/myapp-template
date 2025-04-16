@@ -1,7 +1,14 @@
-import React from 'react'
-import { useState } from 'react'
+import React, { useState } from 'react'
 import api from '../services/api'
-import { getReferralUID } from '../utils/cookies' // pastikan huruf kecil "cookies"
+import { getReferralUID } from '../utils/cookies' // ✅ case betul, lowercase
+import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardContent
+} from '@/components/ui/card'
 
 function Register() {
   const [form, setForm] = useState({
@@ -10,35 +17,83 @@ function Register() {
     password: ''
   })
 
+  const [error, setError] = useState('')
+  const [success, setSuccess] = useState('')
+
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value })
   }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    setError('')
+    setSuccess('')
 
     try {
-      const referralUID = getReferralUID() // ✅ ambil terus dari cookie
+      const referralUID = getReferralUID() // ✅ dapat dari cookie
 
       const res = await api.post('/auth/register', {
         ...form,
-        referredBy: referralUID || null
+        referredBy: referralUID || null,
       })
 
-      alert(`Register success! UID anda: ${res.data.referralUID}`)
+      setSuccess(`Register success! Member ID: ${res.data.referralUID}`)
     } catch (err) {
-      console.error(err)
-      alert(err.response?.data?.message || 'Register failed')
+      setError(err.response?.data?.message || 'Register failed')
     }
   }
 
   return (
-    <form onSubmit={handleSubmit} className="max-w-md mx-auto mt-10 space-y-4">
-      <input name="name" onChange={handleChange} placeholder="Name" className="w-full border p-2" />
-      <input name="email" onChange={handleChange} placeholder="Email" className="w-full border p-2" />
-      <input name="password" type="password" onChange={handleChange} placeholder="Password" className="w-full border p-2" />
-      <button type="submit" className="bg-blue-500 text-white px-4 py-2">Register</button>
-    </form>
+    <div className="min-h-screen bg-background text-foreground flex items-center justify-center px-4">
+      <Card className="w-full max-w-md border bg-card text-card-foreground shadow-lg">
+        <CardHeader>
+          <CardTitle className="text-2xl text-center">Register</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="block mb-1 text-sm">Name</label>
+              <Input
+                type="text"
+                name="name"
+                value={form.name}
+                onChange={handleChange}
+                placeholder="Your name"
+              />
+            </div>
+
+            <div>
+              <label className="block mb-1 text-sm">Email</label>
+              <Input
+                type="email"
+                name="email"
+                value={form.email}
+                onChange={handleChange}
+                placeholder="you@example.com"
+              />
+            </div>
+
+            <div>
+              <label className="block mb-1 text-sm">Password</label>
+              <Input
+                type="password"
+                name="password"
+                value={form.password}
+                onChange={handleChange}
+                placeholder="Create a password"
+              />
+            </div>
+
+            {error && <p className="text-red-500 text-sm">{error}</p>}
+            {success && <p className="text-green-500 text-sm">{success}</p>}
+
+            <Button type="submit" className="w-full">
+              Register
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+    </div>
   )
 }
 
