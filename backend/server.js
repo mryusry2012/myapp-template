@@ -1,40 +1,31 @@
-import express from 'express'
-import mongoose from 'mongoose'
-import cors from 'cors'
-import cookieParser from 'cookie-parser'
-import dotenv from 'dotenv'
+import express from "express";
+import cors from "cors";
+import dotenv from "dotenv";
+import cookieParser from "cookie-parser";
 
-// 👉 Load env
-dotenv.config()
+// Import route utama
+import authRoutes from "./routes/authRoutes.js";
 
-// 👉 Import route
-import authRoutes from './routes/authRoutes.js'
+// Load environment variables
+dotenv.config();
 
-const app = express()
-const PORT = process.env.PORT || 5050
+const app = express();
 
-// ✅ CORS (frontend localhost:5173)
-app.use(cors({
-  origin: 'http://localhost:5173',
-  credentials: true,
-}))
+// Middleware
+app.use(
+  cors({
+    origin: "http://localhost:5173", // ubah ke domain production nanti
+    credentials: true,
+  })
+);
+app.use(express.json());
+app.use(cookieParser());
 
-// ✅ Middleware
-app.use(express.json())
-app.use(cookieParser())
+// API routes
+app.use("/api/auth", authRoutes);
 
-// ✅ Connect MongoDB
-mongoose.connect(process.env.MONGODB_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-})
-.then(() => console.log('✅ MongoDB Connected:', mongoose.connection.host))
-.catch((err) => console.error('MongoDB connection error:', err.message))
-
-// ✅ Routes
-app.use('/api/auth', authRoutes)
-
-// ✅ Start Server
+// Start server
+const PORT = process.env.PORT || 5050;
 app.listen(PORT, () => {
-  console.log(`🚀 Server running at http://localhost:${PORT}`)
-})
+  console.log(`🚀 Server running at http://localhost:${PORT}`);
+});

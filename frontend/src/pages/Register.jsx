@@ -6,12 +6,10 @@ import * as yup from "yup"
 import api from "@/services/api"
 import { getReferralUID } from "@/utils/cookies"
 
-// ✅ Validation Schema
 const schema = yup.object().shape({
   firstName: yup.string().required("First name is required"),
   lastName: yup.string().required("Last name is required"),
   dob: yup.string().required("Date of birth is required"),
-  gender: yup.string().oneOf(["Male", "Female"], "Please select gender").required("Gender is required"),
   countryCode: yup.string().required("Country code is required"),
   phone: yup.string().required("Phone number is required"),
   email: yup.string().email("Invalid email").required("Email is required"),
@@ -25,7 +23,6 @@ function Register() {
     register,
     handleSubmit,
     formState: { errors },
-    getValues,
   } = useForm({
     resolver: yupResolver(schema),
   })
@@ -33,11 +30,9 @@ function Register() {
   const onSubmit = async (data) => {
     try {
       const referralUID = getReferralUID()
-      const fullPhone = `${data.countryCode}${data.phone}`
 
       await api.post("/auth/register", {
         ...data,
-        phone: fullPhone,
         referredBy: referralUID || null,
       })
 
@@ -78,7 +73,7 @@ function Register() {
           </div>
 
           <div>
-            <label className="block mb-1 text-sm">Date of Birth (DOB)</label>
+            <label className="block mb-1 text-sm">Date of Birth</label>
             <input
               type="date"
               {...register("dob")}
@@ -87,30 +82,20 @@ function Register() {
             {errors.dob && <p className="text-red-500 text-sm">{errors.dob.message}</p>}
           </div>
 
-          <div>
-            <label className="block mb-1 text-sm">Gender</label>
-            <select {...register("gender")} className="w-full p-2 border rounded-md bg-white">
-              <option value="">Select Gender</option>
-              <option value="Male">Male</option>
-              <option value="Female">Female</option>
-            </select>
-            {errors.gender && <p className="text-red-500 text-sm">{errors.gender.message}</p>}
-          </div>
-
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block mb-1 text-sm">Country Code</label>
               <select {...register("countryCode")} className="w-full p-2 border rounded-md bg-white">
-                <option value="">Select Country</option>
-                <option value="+60">🇲🇾 Malaysia (+60)</option>
-                <option value="+65">🇸🇬 Singapore (+65)</option>
-                <option value="+62">🇮🇩 Indonesia (+62)</option>
-                <option value="+66">🇹🇭 Thailand (+66)</option>
+                <option value="">Select</option>
+                <option value="+60">🇲🇾 +60</option>
+                <option value="+65">🇸🇬 +65</option>
+                <option value="+62">🇮🇩 +62</option>
+                <option value="+66">🇹🇭 +66</option>
               </select>
               {errors.countryCode && <p className="text-red-500 text-sm">{errors.countryCode.message}</p>}
             </div>
             <div>
-              <label className="block mb-1 text-sm">Phone Number</label>
+              <label className="block mb-1 text-sm">Phone</label>
               <input
                 type="text"
                 {...register("phone")}
