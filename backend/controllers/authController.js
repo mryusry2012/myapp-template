@@ -1,73 +1,63 @@
-import bcrypt from 'bcryptjs'
-import supabase from '../lib/supabaseClient.js'
-import generateReferralUID from '../utils/generateUID.js'
+import { v4 as uuidv4 } from 'uuid'
+import { createClient } from '@supabase/supabase-js'
+import dotenv from 'dotenv'
+import { hashPassword } from '../utils/hashPassword.js'
 
-// ✅ REGISTER USER
+dotenv.config()
+
+// ✅ Connect Supabase
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_KEY
+)
+
+// ✅ Register User API
 export const registerUser = async (req, res) => {
-  const {
-    firstName,
-    lastName,
-    dob,
-    countryCode,
-    phone,
-    email,
-    password,
-    referredBy
-  } = req.body
-
   try {
-    // ✅ Check if email already exists
-    const { data: existingUser, error: existingError } = await supabase
-      .from('users')
-      .select('id')
-      .eq('email', email)
-      .single()
-
-    if (existingUser) {
-      return res.status(400).json({ message: 'Email already registered' })
-    }
+    const {
+      first_name,
+      last_name,
+      dob,
+      country_code,
+      phone,
+      email,
+      password,
+      referred_by,
+    } = req.body
 
     // ✅ Hash password
-    const hashedPassword = await bcrypt.hash(password, 10)
+    const hashedPassword = await hashPassword(password)
 
-    // ✅ Generate unique referral UID
-    let referralUID
-    let isUnique = false
+    // ✅ Auto generate referral UID (format: MVM 235687 SY)
+    const randomSixDigit = Math.floor(100000 + Math.random() * 900000)
+    const referral_uid = `MVM ${randomSixDigit} SY`
 
-    while (!isUnique) {
-      referralUID = generateReferralUID()
-      const { data: uidExists } = await supabase
-        .from('users')
-        .select('id')
-        .eq('referral_uid', referralUID)
-        .single()
-      if (!uidExists) isUnique = true
-    }
-
-    // ✅ Insert into Supabase table
-    const { data, error } = await supabase.from('users').insert([
+    // ✅ Insert into Supabase
+    const { error } = await supabase.from('users_clean_reset').insert([
       {
-        first_name: firstName,
-        last_name: lastName,
+        first_name,
+        last_name,
         dob,
-        country_code: countryCode,
+        country_code,
         phone,
         email,
         password: hashedPassword,
-        referral_uid: referralUID,
-        referred_by: referredBy || null,
+        referral_uid,
+        referred_by: referred_by || null,
       },
     ])
 
-    if (error) throw error
+    if (error) {
+      console.error("Register error:", error)
+      return res.status(400).json({ error: error.message })
+    }
 
-    // ✅ Success
-    res.status(201).json({
+    return res.status(201).json({
       message: 'User registered successfully',
-      referralUID,
+      referral_uid,
     })
   } catch (err) {
     console.error('Register error:', err.message)
-    res.status(500).json({ message: err.message || 'Server error' })
+    return res.status(500).json({ error: 'Internal Server Error' })
   }
 }

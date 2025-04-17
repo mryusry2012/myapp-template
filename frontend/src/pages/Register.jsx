@@ -1,16 +1,17 @@
-import React from "react"
-import { useNavigate } from "react-router-dom"
+// frontend/src/pages/Register.jsx
+
+import React, { useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { yupResolver } from "@hookform/resolvers/yup"
 import * as yup from "yup"
-import api from "@/services/api"
-import { getReferralUID } from "@/utils/cookies"
+import { useNavigate } from "react-router-dom"
+import { getReferralUID, setReferralUID } from "@/utils/cookies"
 
 const schema = yup.object().shape({
-  firstName: yup.string().required("First name is required"),
-  lastName: yup.string().required("Last name is required"),
+  first_name: yup.string().required("First name is required"),
+  last_name: yup.string().required("Last name is required"),
   dob: yup.string().required("Date of birth is required"),
-  countryCode: yup.string().required("Country code is required"),
+  country_code: yup.string().required("Country code is required"),
   phone: yup.string().required("Phone number is required"),
   email: yup.string().email("Invalid email").required("Email is required"),
   password: yup.string().min(6, "Password must be at least 6 characters").required("Password is required"),
@@ -23,52 +24,61 @@ function Register() {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm({
-    resolver: yupResolver(schema),
-  })
+  } = useForm({ resolver: yupResolver(schema) })
+
+  // ✅ Ambil referral UID dari URL dan simpan dalam cookie
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search)
+    const ref = urlParams.get("ref")
+    if (ref) {
+      setReferralUID(ref)
+    }
+  }, [])
 
   const onSubmit = async (data) => {
-    try {
-      const referralUID = getReferralUID()
+    const referred_by = getReferralUID() || null
 
-      await api.post("/auth/register", {
-        ...data,
-        referredBy: referralUID || null,
-      })
+    const response = await fetch("http://localhost:5050/api/auth/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...data, referred_by }),
+    })
 
+    const result = await response.json()
+
+    if (!response.ok) {
+      alert(result.error || "Registration failed")
+    } else {
       alert("Registration successful!")
       navigate("/login")
-    } catch (err) {
-      alert(err.response?.data?.message || "Registration failed")
     }
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 text-gray-800 flex items-center justify-center px-4">
-      <div className="w-full max-w-xl bg-white shadow-lg rounded-lg p-8 space-y-6 fade-in">
+    <div className="text-gray-800 flex items-center justify-center p-4">
+      <div className="w-full max-w-xl bg-[#D5E5D5] shadow-lg rounded-xl p-8 space-y-6">
         <h1 className="text-2xl font-bold text-center">Create an Account</h1>
-
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block mb-1 text-sm">First Name</label>
               <input
                 type="text"
-                {...register("firstName")}
+                {...register("first_name")}
                 className="w-full p-2 border rounded-md bg-white"
                 placeholder="John"
               />
-              {errors.firstName && <p className="text-red-500 text-sm">{errors.firstName.message}</p>}
+              {errors.first_name && <p className="text-red-500 text-sm">{errors.first_name.message}</p>}
             </div>
             <div>
               <label className="block mb-1 text-sm">Last Name</label>
               <input
                 type="text"
-                {...register("lastName")}
+                {...register("last_name")}
                 className="w-full p-2 border rounded-md bg-white"
                 placeholder="Doe"
               />
-              {errors.lastName && <p className="text-red-500 text-sm">{errors.lastName.message}</p>}
+              {errors.last_name && <p className="text-red-500 text-sm">{errors.last_name.message}</p>}
             </div>
           </div>
 
@@ -82,28 +92,27 @@ function Register() {
             {errors.dob && <p className="text-red-500 text-sm">{errors.dob.message}</p>}
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block mb-1 text-sm">Country Code</label>
-              <select {...register("countryCode")} className="w-full p-2 border rounded-md bg-white">
-                <option value="">Select</option>
-                <option value="+60">🇲🇾 +60</option>
-                <option value="+65">🇸🇬 +65</option>
-                <option value="+62">🇮🇩 +62</option>
-                <option value="+66">🇹🇭 +66</option>
-              </select>
-              {errors.countryCode && <p className="text-red-500 text-sm">{errors.countryCode.message}</p>}
-            </div>
-            <div>
-              <label className="block mb-1 text-sm">Phone</label>
-              <input
-                type="text"
-                {...register("phone")}
-                className="w-full p-2 border rounded-md bg-white"
-                placeholder="123456789"
-              />
-              {errors.phone && <p className="text-red-500 text-sm">{errors.phone.message}</p>}
-            </div>
+          <div>
+            <label className="block mb-1 text-sm">Country Code</label>
+            <select {...register("country_code")} className="w-full p-2 border rounded-md bg-white">
+              <option value="">Select Country</option>
+              <option value="+60">🇲🇾 Malaysia (+60)</option>
+              <option value="+65">🇸🇬 Singapore (+65)</option>
+              <option value="+66">🇹🇭 Thailand (+66)</option>
+              <option value="+62">🇮🇩 Indonesia (+62)</option>
+            </select>
+            {errors.country_code && <p className="text-red-500 text-sm">{errors.country_code.message}</p>}
+          </div>
+
+          <div>
+            <label className="block mb-1 text-sm">Phone Number</label>
+            <input
+              type="text"
+              {...register("phone")}
+              className="w-full p-2 border rounded-md bg-white"
+              placeholder="123456789"
+            />
+            {errors.phone && <p className="text-red-500 text-sm">{errors.phone.message}</p>}
           </div>
 
           <div>
@@ -130,7 +139,7 @@ function Register() {
 
           <button
             type="submit"
-            className="w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700"
+            className="w-full bg-blue-700 text-white py-2 rounded-md hover:bg-blue-800"
           >
             Register
           </button>
