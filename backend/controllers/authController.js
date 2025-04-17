@@ -1,17 +1,17 @@
 import { v4 as uuidv4 } from 'uuid'
 import { createClient } from '@supabase/supabase-js'
 import dotenv from 'dotenv'
-import { hashPassword } from '../utils/hashPassword.js'
+import { hashPassword, comparePassword } from '../utils/hashPassword.js'
 
 dotenv.config()
 
-// ✅ Connect Supabase
+// ✅ Sambungan Supabase
 const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_KEY
 )
 
-// ✅ Register User API
+// ✅ Fungsi daftar pengguna
 export const registerUser = async (req, res) => {
   try {
     const {
@@ -25,14 +25,10 @@ export const registerUser = async (req, res) => {
       referred_by,
     } = req.body
 
-    // ✅ Hash password
     const hashedPassword = await hashPassword(password)
-
-    // ✅ Auto generate referral UID (format: MVM 235687 SY)
     const randomSixDigit = Math.floor(100000 + Math.random() * 900000)
     const referral_uid = `MVM ${randomSixDigit} SY`
 
-    // ✅ Insert into Supabase
     const { error } = await supabase.from('users_clean_reset').insert([
       {
         first_name,
@@ -48,7 +44,7 @@ export const registerUser = async (req, res) => {
     ])
 
     if (error) {
-      console.error("Register error:", error)
+      console.error('❌ Register error:', error)
       return res.status(400).json({ error: error.message })
     }
 
@@ -57,7 +53,42 @@ export const registerUser = async (req, res) => {
       referral_uid,
     })
   } catch (err) {
-    console.error('Register error:', err.message)
+    console.error('❌ Register exception:', err.message)
+    return res.status(500).json({ error: 'Internal Server Error' })
+  }
+}
+
+// ✅ Fungsi login pengguna
+export const loginUser = async (req, res) => {
+  try {
+    const { email, password } = req.body
+
+    const { data: user, error } = await supabase
+      .from('users_clean_reset')
+      .select('*')
+      .eq('email', email)
+      .single()
+
+    if (error || !user) {
+      console.error('❌ Login error:', error)
+      return res.status(401).json({ error: 'Invalid credentials' })
+    }
+
+    const isMatch = await comparePassword(password, user.password)
+    if (!isMatch) {
+      return res.status(401).json({ error: 'Invalid password' })
+    }
+
+    return res.status(200).json({
+      message: 'Login successful',
+      user: {
+        id: user.id,
+        email: user.email,
+        referral_uid: user.referral_uid,
+      },
+    })
+  } catch (err) {
+    console.error('❌ Login exception:', err.message)
     return res.status(500).json({ error: 'Internal Server Error' })
   }
 }
