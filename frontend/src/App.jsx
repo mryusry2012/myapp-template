@@ -1,5 +1,8 @@
+// src/App.jsx
 import React from "react"
 import { BrowserRouter, Routes, Route } from "react-router-dom"
+import { ToastContainer } from "react-toastify"
+import "react-toastify/dist/ReactToastify.css"
 
 import Register from "./pages/Register"
 import Login from "./pages/Login"
@@ -8,21 +11,67 @@ import ForgotPassword from "./pages/ForgotPassword"
 import ResetPassword from "./pages/ResetPassword"
 import UpdateProfile from "./pages/UpdateProfile"
 import UpdatePassword from "./pages/UpdatePassword"
+import UpgradePage from "./pages/UpgradePage"
+import ChartsPage from "./pages/ChartsPage"
+import ProfilePage from "./pages/settings/ProfilePage"
+ // ✅ fixed path here
 
 function App() {
   return (
     <BrowserRouter>
-      <div className="min-h-screen bg-gray-100 text-gray-800 flex items-center justify-center p-4">
-        <Routes>
-          <Route path="/register" element={<Register />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/forgot-password" element={<ForgotPassword />} />
-          <Route path="/reset-password" element={<ResetPassword />} />
-          <Route path="/update-profile" element={<UpdateProfile />} />
-          <Route path="/update-password" element={<UpdatePassword />} />
-        </Routes>
-      </div>
+      {/* Global Toast Notifications */}
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        pauseOnHover
+        theme="light"
+      />
+
+      {/* Routes */}
+      <Routes>
+        {/* Public Pages */}
+        <Route
+          path="/register"
+          element={
+            <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
+              <Register />
+            </div>
+          }
+        />
+        <Route
+          path="/login"
+          element={
+            <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
+              <Login />
+            </div>
+          }
+        />
+        <Route
+          path="/forgot-password"
+          element={
+            <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
+              <ForgotPassword />
+            </div>
+          }
+        />
+        <Route
+          path="/reset-password"
+          element={
+            <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
+              <ResetPassword />
+            </div>
+          }
+        />
+
+        {/* Dashboard / Protected Pages */}
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/update-profile" element={<UpdateProfile />} />
+        <Route path="/update-password" element={<UpdatePassword />} />
+        <Route path="/upgrade" element={<UpgradePage />} />
+        <Route path="/charts" element={<ChartsPage />} />
+        <Route path="/profile" element={<ProfilePage />} />
+      </Routes>
     </BrowserRouter>
   )
 }
