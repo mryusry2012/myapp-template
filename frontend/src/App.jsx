@@ -9,17 +9,15 @@ import Login from "./pages/Login"
 import Dashboard from "./pages/Dashboard"
 import ForgotPassword from "./pages/ForgotPassword"
 import ResetPassword from "./pages/ResetPassword"
-import UpdateProfile from "./pages/UpdateProfile"
 import UpdatePassword from "./pages/UpdatePassword"
 import UpgradePage from "./pages/UpgradePage"
 import ChartsPage from "./pages/ChartsPage"
-import ProfilePage from "./pages/settings/ProfilePage"
- // ✅ fixed path here
+import ProfilePage from "./pages/settings/ProfilePage" // ✅ ini yang digunakan
 
 function App() {
   return (
     <BrowserRouter>
-      {/* Global Toast Notifications */}
+      {/* Global Toast Notification */}
       <ToastContainer
         position="top-right"
         autoClose={3000}
@@ -28,9 +26,8 @@ function App() {
         theme="light"
       />
 
-      {/* Routes */}
       <Routes>
-        {/* Public Pages */}
+        {/* 🔓 Public Auth Pages */}
         <Route
           path="/register"
           element={
@@ -64,9 +61,8 @@ function App() {
           }
         />
 
-        {/* Dashboard / Protected Pages */}
+        {/* 🔐 Dashboard + Protected Pages */}
         <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/update-profile" element={<UpdateProfile />} />
         <Route path="/update-password" element={<UpdatePassword />} />
         <Route path="/upgrade" element={<UpgradePage />} />
         <Route path="/charts" element={<ChartsPage />} />

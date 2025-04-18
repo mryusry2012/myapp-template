@@ -21,7 +21,7 @@ function Dashboard() {
   const [levelsDetail, setLevelsDetail] = useState({})
   const [activity, setActivity] = useState([])
 
-  const currentUserUID = "MVM 923149 SY" // Replace later with session logic
+  const currentUserUID = "MVM 923149 SY"
 
   useEffect(() => {
     const fetchData = async () => {
@@ -71,11 +71,9 @@ function Dashboard() {
 
   return (
     <Layout user={userData}>
-      <div className="min-h-screen bg-gray-100 px-4 md:px-10 py-6">
-        <div className="max-w-screen-xl mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-
-          {/* 🟥 Referral */}
-          <div className="bg-white rounded-2xl shadow p-6 min-h-[220px] flex flex-col justify-between">
+      <div className="w-full px-4 md:px-10 pt-6 pb-12">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-8">
+          <div className="bg-white rounded-2xl shadow p-6 h-full flex flex-col justify-between">
             <ReferralOverview
               data={{
                 komisen,
@@ -85,31 +83,25 @@ function Dashboard() {
             />
           </div>
 
-          {/* 🟨 Network */}
-          <div className="bg-white rounded-2xl shadow p-6 min-h-[220px] flex flex-col justify-between">
+          <div className="bg-white rounded-2xl shadow p-6 h-full flex flex-col justify-between">
             <NetworkPerformance levels={levels} levelsDetail={levelsDetail} />
           </div>
 
-          {/* 🟩 Activity */}
-          <div className="bg-white rounded-2xl shadow p-6 min-h-[220px] flex flex-col justify-between">
+          <div className="bg-white rounded-2xl shadow p-6 h-full flex flex-col justify-between">
             <RecentActivity activity={activity} />
           </div>
 
-          {/* 🟦 Summary */}
-          <div className="bg-white rounded-2xl shadow p-6 min-h-[220px] flex flex-col justify-between">
+          <div className="bg-white rounded-2xl shadow p-6 h-full flex flex-col justify-between">
             <AccountSummary user={userData} />
           </div>
 
-          {/* 🟪 Placeholder (future chart) */}
-          <div className="bg-white rounded-2xl shadow p-6 min-h-[220px] flex items-center justify-center text-gray-400">
+          <div className="bg-white rounded-2xl shadow p-6 h-full flex items-center justify-center text-gray-400">
             Reserved for future analytics / chart
           </div>
 
-          {/* ⬛ Upgrade Notification */}
-          <div className="bg-white rounded-2xl shadow p-6 min-h-[220px] flex flex-col justify-between">
+          <div className="bg-white rounded-2xl shadow p-6 h-full flex flex-col justify-between">
             <UpgradeNotification user={userData} downline={downline} />
           </div>
-
         </div>
       </div>
     </Layout>

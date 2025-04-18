@@ -1,5 +1,4 @@
-// src/components/layout/Sidebar.jsx
-import React from "react"
+import React, { useEffect, useRef } from "react"
 import { NavLink } from "react-router-dom"
 import { Home, User, BarChart2, LogOut } from "lucide-react"
 
@@ -10,33 +9,48 @@ function Sidebar({ isOpen, onClose }) {
     }
   }
 
-  // Sementara untuk demo – boleh tukar kepada props.user.referral_uid jika dynamic
   const memberID = "MVM 923149 SY"
+  const audioRef = useRef(null)
+
+  useEffect(() => {
+    audioRef.current = new Audio("/sound/pop-94319.mp3")
+    audioRef.current.volume = 0.4
+    audioRef.current.load()
+  }, [])
+
+  const handleHover = () => {
+    if (audioRef.current) {
+      audioRef.current.currentTime = 0
+      audioRef.current.play().catch((err) => {
+        console.warn("🔇 Sound autoplay blocked:", err.message)
+      })
+    }
+  }
 
   return (
     <>
-      {/* Backdrop - mobile only */}
+      {/* Mobile backdrop */}
       {isOpen && (
         <div
-          className="fixed inset-0 bg-black/30 z-30 md:hidden"
+          className="fixed inset-0 bg-black/30 backdrop-blur-sm z-30 md:hidden"
           onClick={onClose}
         />
       )}
 
       {/* Sidebar */}
       <div
-        className={`fixed top-0 left-0 h-full w-64 bg-[#1F2937] text-white z-40 transform transition-transform duration-300
+        className={`fixed top-0 left-0 h-full w-64 bg-[#1F2937] text-white z-40 transform transition-transform duration-500 ease-in-out
         ${isOpen ? "translate-x-0" : "-translate-x-full"}
-        md:translate-x-0 md:relative md:flex md:flex-col md:h-screen`}
+        md:translate-x-0 md:relative md:flex md:flex-col md:h-screen shadow-xl`}
       >
         <div className="flex flex-col justify-between h-full p-6">
-          {/* Avatar + Info */}
+          {/* User Info */}
           <div>
             <div className="flex flex-col items-center gap-2 mb-6">
               <img
                 src="https://i.pravatar.cc/100"
                 alt="avatar"
-                className="w-16 h-16 rounded-full border-2 border-white"
+                className="w-16 h-16 rounded-full border-2 border-white transition-opacity duration-500 hover:opacity-80"
               />
               <p className="text-lg font-semibold">Yusri</p>
               <p className="text-sm text-gray-400">Member</p>
@@ -45,53 +59,39 @@ function Sidebar({ isOpen, onClose }) {
 
             <hr className="border-white/20 mb-6" />
 
+            {/* Navigation Menu */}
             <nav className="space-y-3">
-              <NavLink
-                to="/dashboard"
-                onClick={handleCloseMobile}
-                className={({ isActive }) =>
-                  `flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-white/10 transition-all ${
-                    isActive ? "bg-white/10 font-semibold" : ""
-                  }`
-                }
-              >
-                <Home className="w-5 h-5" />
-                Overview
-              </NavLink>
-
-              <NavLink
-                to="/update-profile"
-                onClick={handleCloseMobile}
-                className={({ isActive }) =>
-                  `flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-white/10 transition-all ${
-                    isActive ? "bg-white/10 font-semibold" : ""
-                  }`
-                }
-              >
-                <User className="w-5 h-5" />
-                Profile
-              </NavLink>
-
-              <NavLink
-                to="/charts"
-                onClick={handleCloseMobile}
-                className={({ isActive }) =>
-                  `flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-white/10 transition-all ${
-                    isActive ? "bg-white/10 font-semibold" : ""
-                  }`
-                }
-              >
-                <BarChart2 className="w-5 h-5" />
-                Charts
-              </NavLink>
+              {[
+                { to: "/dashboard", icon: Home, label: "Overview" },
+                { to: "/profile", icon: User, label: "Profile" }, // ✅ route betul
+                { to: "/charts", icon: BarChart2, label: "Charts" },
+              ].map(({ to, icon: Icon, label }) => (
+                <NavLink
+                  key={to}
+                  to={to}
+                  onClick={handleCloseMobile}
+                  onMouseEnter={handleHover}
+                  className={({ isActive }) =>
+                    `flex items-center gap-3 px-4 py-2 rounded-lg transition-all hover:bg-white/10 hover:scale-105 hover:shadow
+                    ${
+                      isActive
+                        ? "bg-white/10 font-semibold shadow-inner border border-white/20"
+                        : ""
+                    }`
+                  }
+                >
+                  <Icon className="w-5 h-5" />
+                  {label}
+                </NavLink>
+              ))}
             </nav>
           </div>
 
-          {/* Logout */}
+          {/* Logout Button */}
           <div>
             <button
               onClick={() => (window.location.href = "/login")}
-              className="flex items-center gap-2 text-red-400 hover:text-red-500 px-4 py-2 transition"
+              className="flex items-center gap-2 text-red-400 hover:text-red-500 px-4 py-2 transition-all hover:scale-105 animate-pulse"
             >
               <LogOut className="w-5 h-5" />
               Logout
