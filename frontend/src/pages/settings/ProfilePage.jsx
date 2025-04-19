@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react"
 import Layout from "@/components/layout/Layout"
-import { getCurrentUser } from "@/utils/getCurrentUser"
 import { supabase } from "@/utils/supabase"
 
 function ProfilePage() {
@@ -10,20 +9,19 @@ function ProfilePage() {
     lastName: "",
     email: "",
     phone: "",
-    password: "",
   })
   const [loading, setLoading] = useState(true)
-  const [sessionMissing, setSessionMissing] = useState(false)
 
   useEffect(() => {
     const fetchProfile = async () => {
-      const user = await getCurrentUser()
-      if (!user) {
-        console.warn("❌ No session found.")
-        setSessionMissing(true)
+      const storedUser = localStorage.getItem("user")
+      if (!storedUser) {
+        setUserData(null)
         setLoading(false)
         return
       }
+
+      const user = JSON.parse(storedUser)
 
       const { data, error } = await supabase
         .from("users_clean_reset")
@@ -32,8 +30,8 @@ function ProfilePage() {
         .single()
 
       if (error || !data) {
-        console.warn("❌ User data not found.")
-        setSessionMissing(true)
+        console.warn("❌ Failed to load profile:", error)
+        setUserData(null)
         setLoading(false)
         return
       }
@@ -44,24 +42,11 @@ function ProfilePage() {
         lastName: data.last_name || "",
         email: data.email || "",
         phone: data.phone || "",
-        password: "",
       })
-
       setLoading(false)
     }
 
     fetchProfile()
-
-    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (!session) {
-        setSessionMissing(true)
-        setUserData(null)
-      }
-    })
-
-    return () => {
-      authListener?.subscription?.unsubscribe()
-    }
   }, [])
 
   const handleChange = (e) => {
@@ -82,7 +67,7 @@ function ProfilePage() {
       .eq("email", form.email)
 
     if (error) {
-      alert("❌ Failed to update profile.")
+      alert("❌ Failed to update profile")
     } else {
       alert("✅ Profile updated successfully!")
     }
@@ -91,15 +76,15 @@ function ProfilePage() {
   if (loading) {
     return (
       <Layout user={{ first_name: "", referral_uid: "" }}>
-        <div className="text-center py-24 text-gray-500 text-sm">🔄 Loading profile...</div>
+        <div className="text-center py-20 text-gray-500">🔄 Loading profile...</div>
       </Layout>
     )
   }
 
-  if (sessionMissing || !userData) {
+  if (!userData) {
     return (
       <Layout user={{ first_name: "", referral_uid: "" }}>
-        <div className="text-center py-24 text-red-500">
+        <div className="text-center py-24 text-red-600">
           Session not found. Please{" "}
           <a href="/login" className="underline text-indigo-600">login again</a>.
         </div>
@@ -113,7 +98,7 @@ function ProfilePage() {
         <h2 className="text-2xl font-semibold text-gray-800">My Profile</h2>
         <p className="text-sm text-gray-500">Manage your personal information and account settings.</p>
 
-        {/* Avatar Section */}
+        {/* Avatar */}
         <div className="flex flex-col sm:flex-row items-center gap-6 bg-white p-6 rounded-2xl shadow">
           <img
             src="https://i.pravatar.cc/120"
@@ -130,7 +115,7 @@ function ProfilePage() {
           </div>
         </div>
 
-        {/* Update Form */}
+        {/* Form */}
         <form onSubmit={handleSubmit} className="bg-white p-6 rounded-2xl shadow space-y-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>

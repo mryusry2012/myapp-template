@@ -1,86 +1,103 @@
-import { v4 as uuidv4 } from 'uuid'
-import { createClient } from '@supabase/supabase-js'
-import dotenv from 'dotenv'
-import { hashPassword, comparePassword } from '../utils/hashPassword.js'
+// backend/controllers/authController.js
+import { createClient } from "@supabase/supabase-js"
+import dotenv from "dotenv"
+import { hashPassword, comparePassword } from "../utils/hashPassword.js"
 
 dotenv.config()
 
-// ✅ Sambungan Supabase
 const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_KEY
 )
 
-// ✅ Fungsi daftar pengguna
+// ✅ Register User
 export const registerUser = async (req, res) => {
   try {
     const {
       first_name,
       last_name,
       dob,
-      country_code,
       phone,
       email,
       password,
+      referral_uid,
       referred_by,
     } = req.body
 
-    const hashedPassword = await hashPassword(password)
-    const randomSixDigit = Math.floor(100000 + Math.random() * 900000)
-    const referral_uid = `MVM ${randomSixDigit} SY`
+    if (!first_name || !last_name || !dob || !phone || !email || !password || !referral_uid) {
+      return res.status(422).json({ error: "Missing required fields" })
+    }
 
-    const { error } = await supabase.from('users_clean_reset').insert([
+    // ✅ Check if email already exists
+    const { data: existingUser } = await supabase
+      .from("users_clean_reset")
+      .select("id")
+      .eq("email", email)
+      .single()
+
+    if (existingUser) {
+      return res.status(400).json({ error: "Email already exists" })
+    }
+
+    const hashedPassword = await hashPassword(password)
+
+    const { error } = await supabase.from("users_clean_reset").insert([
       {
         first_name,
         last_name,
         dob,
-        country_code,
         phone,
         email,
         password: hashedPassword,
         referral_uid,
         referred_by: referred_by || null,
+        komisen: 0,
+        is_paid: false,
       },
     ])
 
     if (error) {
-      console.error('❌ Register error:', error)
+      console.error("❌ Supabase Insert Error:", error)
       return res.status(400).json({ error: error.message })
     }
 
     return res.status(201).json({
-      message: 'User registered successfully',
+      message: "✅ User registered successfully",
       referral_uid,
     })
   } catch (err) {
-    console.error('❌ Register exception:', err.message)
-    return res.status(500).json({ error: 'Internal Server Error' })
+    console.error("❌ Register Exception:", err.message)
+    return res.status(500).json({ error: "Internal Server Error" })
   }
 }
 
-// ✅ Fungsi login pengguna
+// ✅ Login User
 export const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body
 
+    if (!email || !password) {
+      return res.status(422).json({ error: "Email and password are required" })
+    }
+
     const { data: user, error } = await supabase
-      .from('users_clean_reset')
-      .select('*')
-      .eq('email', email)
+      .from("users_clean_reset")
+      .select("*")
+      .eq("email", email)
       .single()
 
     if (error || !user) {
-      console.error('❌ Login error:', error)
-      return res.status(401).json({ error: 'Invalid credentials' })
+      console.error("❌ Supabase Lookup Error:", error)
+      return res.status(401).json({ error: "Invalid email or account not found" })
     }
 
     const isMatch = await comparePassword(password, user.password)
     if (!isMatch) {
-      return res.status(401).json({ error: 'Invalid password' })
+      return res.status(401).json({ error: "Invalid password" })
     }
 
     return res.status(200).json({
-      message: 'Login successful',
+      message: "✅ Login successful",
       user: {
         id: user.id,
         email: user.email,
@@ -88,7 +105,7 @@ export const loginUser = async (req, res) => {
       },
     })
   } catch (err) {
-    console.error('❌ Login exception:', err.message)
-    return res.status(500).json({ error: 'Internal Server Error' })
+    console.error("❌ Login Exception:", err.message)
+    return res.status(500).json({ error: "Internal Server Error" })
   }
 }

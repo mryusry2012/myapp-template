@@ -1,10 +1,20 @@
 // src/components/layout/Layout.jsx
-import React, { useState } from "react"
+import React, { useEffect, useState } from "react"
+import { useNavigate } from "react-router-dom"
 import Sidebar from "./Sidebar"
 import Topbar from "./Topbar"
 
 function Layout({ children, user }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
+  const navigate = useNavigate()
+
+  // ✅ Auto logout globally if no session
+  useEffect(() => {
+    const storedUser = localStorage.getItem("user")
+    if (!storedUser) {
+      navigate("/login")
+    }
+  }, [navigate])
 
   return (
     <div className="flex flex-col min-h-screen md:flex-row md:h-screen overflow-x-hidden">

@@ -1,14 +1,9 @@
+// src/pages/Login.jsx
 import React, { useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { yupResolver } from "@hookform/resolvers/yup"
 import * as yup from "yup"
 import { useNavigate } from "react-router-dom"
-import { createClient } from "@supabase/supabase-js"
-
-const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL,
-  import.meta.env.VITE_SUPABASE_KEY
-)
 
 const schema = yup.object().shape({
   email: yup.string().email("Invalid email").required("Email is required"),
@@ -25,72 +20,67 @@ function Login() {
   } = useForm({ resolver: yupResolver(schema) })
 
   const onSubmit = async ({ email, password }) => {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    })
+    try {
+      const response = await fetch("http://localhost:5050/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      })
 
-    if (error) {
-      console.error("Login error:", error)
-      alert("❌ " + error.message)
-      return
-    }
+      const result = await response.json()
 
-    if (data.session) {
-      console.log("✅ Login success:", data)
+      if (!response.ok) {
+        alert(result.error || "❌ Login failed")
+        return
+      }
+
+      // ✅ Simpan user ke localStorage
+      localStorage.setItem("user", JSON.stringify(result.user))
+
       alert("✅ Login successful!")
       navigate("/dashboard")
-    } else {
-      alert("❌ Session not found after login.")
+    } catch (error) {
+      console.error("❌ Login error:", error)
+      alert("❌ Something went wrong")
     }
   }
 
-  // Auto redirect if already logged in
+  // ✅ Auto redirect kalau dah login
   useEffect(() => {
-    const checkSession = async () => {
-      const { data } = await supabase.auth.getSession()
-      if (data.session) {
-        navigate("/dashboard")
-      }
+    const user = localStorage.getItem("user")
+    if (user) {
+      navigate("/dashboard")
     }
-    checkSession()
   }, [navigate])
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100 text-gray-800 p-4">
-      <div className="w-[470px] bg-[#D5E5D5] shadow-lg rounded-xl p-8 flex flex-col justify-center space-y-6">
+    <div className="min-h-screen flex items-center justify-center  to-white text-gray-800 p-4">
+      <div className="w-full max-w-md bg-white rounded-xl shadow-xl p-8 space-y-6">
         <h1 className="text-2xl font-bold text-center">Login to Your Account</h1>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          {/* Email */}
           <div>
-            <label className="block mb-1 text-sm">Email</label>
+            <label className="block mb-1 text-sm font-medium">Email</label>
             <input
               type="email"
               {...register("email")}
-              className="w-full p-2 border rounded-md bg-white"
               placeholder="you@email.com"
+              className="w-full p-2 border border-gray-300 rounded-md bg-white"
             />
-            {errors.email && (
-              <p className="text-red-500 text-sm">{errors.email.message}</p>
-            )}
+            {errors.email && <p className="text-red-500 text-sm">{errors.email.message}</p>}
           </div>
 
-          {/* Password */}
           <div>
-            <label className="block mb-1 text-sm">Password</label>
+            <label className="block mb-1 text-sm font-medium">Password</label>
             <input
               type="password"
               {...register("password")}
-              className="w-full p-2 border rounded-md bg-white"
               placeholder="••••••••"
+              className="w-full p-2 border border-gray-300 rounded-md bg-white"
             />
-            {errors.password && (
-              <p className="text-red-500 text-sm">{errors.password.message}</p>
-            )}
+            {errors.password && <p className="text-red-500 text-sm">{errors.password.message}</p>}
           </div>
 
-          {/* Submit Button */}
           <button
             type="submit"
             className="w-full bg-blue-700 text-white py-2 rounded-md hover:bg-blue-800 transition"
