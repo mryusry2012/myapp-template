@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react"
 import Layout from "@/components/layout/Layout"
+import { getCurrentUser } from "@/utils/getCurrentUser"
 import { supabase } from "@/utils/supabase"
 
 function ProfilePage() {
@@ -11,17 +12,17 @@ function ProfilePage() {
     phone: "",
   })
   const [loading, setLoading] = useState(true)
+  const [sessionMissing, setSessionMissing] = useState(false)
 
   useEffect(() => {
     const fetchProfile = async () => {
-      const storedUser = localStorage.getItem("user")
-      if (!storedUser) {
-        setUserData(null)
+      const user = await getCurrentUser()
+      if (!user) {
+        console.warn("❌ No session found.")
+        setSessionMissing(true)
         setLoading(false)
         return
       }
-
-      const user = JSON.parse(storedUser)
 
       const { data, error } = await supabase
         .from("users_clean_reset")
@@ -30,8 +31,8 @@ function ProfilePage() {
         .single()
 
       if (error || !data) {
-        console.warn("❌ Failed to load profile:", error)
-        setUserData(null)
+        console.warn("❌ User data not found.")
+        setSessionMissing(true)
         setLoading(false)
         return
       }
@@ -43,10 +44,22 @@ function ProfilePage() {
         email: data.email || "",
         phone: data.phone || "",
       })
+
       setLoading(false)
     }
 
     fetchProfile()
+
+    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!session) {
+        setSessionMissing(true)
+        setUserData(null)
+      }
+    })
+
+    return () => {
+      authListener?.subscription?.unsubscribe()
+    }
   }, [])
 
   const handleChange = (e) => {
@@ -67,7 +80,7 @@ function ProfilePage() {
       .eq("email", form.email)
 
     if (error) {
-      alert("❌ Failed to update profile")
+      alert("❌ Failed to update profile.")
     } else {
       alert("✅ Profile updated successfully!")
     }
@@ -76,15 +89,15 @@ function ProfilePage() {
   if (loading) {
     return (
       <Layout user={{ first_name: "", referral_uid: "" }}>
-        <div className="text-center py-20 text-gray-500">🔄 Loading profile...</div>
+        <div className="text-center py-24 text-gray-500 text-sm">🔄 Loading profile...</div>
       </Layout>
     )
   }
 
-  if (!userData) {
+  if (sessionMissing || !userData) {
     return (
       <Layout user={{ first_name: "", referral_uid: "" }}>
-        <div className="text-center py-24 text-red-600">
+        <div className="text-center py-24 text-red-500">
           Session not found. Please{" "}
           <a href="/login" className="underline text-indigo-600">login again</a>.
         </div>
@@ -94,9 +107,9 @@ function ProfilePage() {
 
   return (
     <Layout user={userData}>
-      <div className="max-w-6xl mx-auto px-4 md:px-10 py-8 space-y-8">
+      <div className="max-w-5xl mx-auto px-4 md:px-10 py-8 space-y-8">
         <h2 className="text-2xl font-semibold text-gray-800">My Profile</h2>
-        <p className="text-sm text-gray-500">Manage your personal information and account settings.</p>
+        <p className="text-sm text-gray-500">Manage your personal info & account details.</p>
 
         {/* Avatar */}
         <div className="flex flex-col sm:flex-row items-center gap-6 bg-white p-6 rounded-2xl shadow">

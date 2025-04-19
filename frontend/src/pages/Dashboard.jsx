@@ -4,9 +4,9 @@ import Layout from "@/components/layout/Layout"
 import ReferralOverview from "@/components/dashboard/ReferralOverview"
 import NetworkPerformance from "@/components/dashboard/NetworkPerformance"
 import RecentActivity from "@/components/dashboard/RecentActivity"
-import AccountSummary from "@/components/dashboard/AccountSummary"
 import UpgradeNotification from "@/components/dashboard/UpgradeNotification"
 import { supabase } from "@/utils/supabase"
+import { getCurrentUser } from "@/utils/getCurrentUser"
 
 function Dashboard() {
   const [userData, setUserData] = useState(null)
@@ -18,23 +18,27 @@ function Dashboard() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const fetchData = async () => {
-      const storedUser = localStorage.getItem("user")
-      if (!storedUser) {
+    const fetchDashboardData = async () => {
+      let user = await getCurrentUser()
+      if (!user) {
+        const storedUser = localStorage.getItem("user")
+        if (storedUser) user = JSON.parse(storedUser)
+      }
+
+      if (!user) {
+        setUserData(null)
         setLoading(false)
         return
       }
 
-      const user = JSON.parse(storedUser)
-
-      const { data: profile, error } = await supabase
+      const { data: profile } = await supabase
         .from("users_clean_reset")
         .select("*")
         .eq("email", user.email)
         .single()
 
-      if (error || !profile) {
-        console.error("❌ Supabase profile fetch error:", error)
+      if (!profile) {
+        setUserData(null)
         setLoading(false)
         return
       }
@@ -47,40 +51,40 @@ function Dashboard() {
         .select("*")
         .eq("referred_by", profile.referral_uid)
 
-      setDownline(downlineData || [])
+      setDownline(downlineData)
 
-      const groupByLevel = {}
-      downlineData?.forEach((u) => {
-        if (!groupByLevel[u.level]) groupByLevel[u.level] = []
-        groupByLevel[u.level].push(u)
+      const grouped = {}
+      downlineData.forEach((u) => {
+        if (!grouped[u.level]) grouped[u.level] = []
+        grouped[u.level].push(u)
       })
 
       setLevels({
-        1: groupByLevel[1]?.length || 0,
-        2: groupByLevel[2]?.length || 0,
-        3: groupByLevel[3]?.length || 0,
-        4: groupByLevel[4]?.length || 0,
+        1: grouped[1]?.length || 0,
+        2: grouped[2]?.length || 0,
+        3: grouped[3]?.length || 0,
+        4: grouped[4]?.length || 0,
       })
 
-      setLevelsDetail(groupByLevel)
+      setLevelsDetail(grouped)
 
-      const recent = downlineData?.map((d) => ({
-        name: `${d.first_name} ${d.last_name}`,
-        level: d.level,
-        date: d.created_at?.split("T")[0],
-      })) || []
+      const recent = downlineData.map((u) => ({
+        name: `${u.first_name} ${u.last_name}`,
+        level: u.level,
+        date: u.created_at?.split("T")[0],
+      }))
 
       setActivity(recent)
       setLoading(false)
     }
 
-    fetchData()
+    fetchDashboardData()
   }, [])
 
   if (loading) {
     return (
       <Layout user={{ first_name: "", referral_uid: "" }}>
-        <div className="text-center py-24 text-gray-500">🔄 Loading dashboard...</div>
+        <div className="text-center py-20 text-gray-500">🔄 Loading dashboard...</div>
       </Layout>
     )
   }
@@ -88,7 +92,7 @@ function Dashboard() {
   if (!userData) {
     return (
       <Layout user={{ first_name: "", referral_uid: "" }}>
-        <div className="text-center py-24 text-red-500">
+        <div className="text-center py-24 text-red-600">
           Session not found. Please <a href="/login" className="underline text-indigo-600">login again</a>.
         </div>
       </Layout>
@@ -100,13 +104,11 @@ function Dashboard() {
       <div className="w-full px-4 md:px-10 pt-6 pb-12">
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-8">
           <div className="bg-white rounded-2xl shadow p-6 h-full flex flex-col justify-between">
-            <ReferralOverview
-              data={{
-                komisen,
-                downline_total: downline.length,
-                is_paid: userData.is_paid,
-              }}
-            />
+            <ReferralOverview data={{
+              komisen,
+              downline_total: downline.length,
+              is_paid: userData.is_paid,
+            }} />
           </div>
 
           <div className="bg-white rounded-2xl shadow p-6 h-full flex flex-col justify-between">
@@ -115,10 +117,6 @@ function Dashboard() {
 
           <div className="bg-white rounded-2xl shadow p-6 h-full flex flex-col justify-between">
             <RecentActivity activity={activity} />
-          </div>
-
-          <div className="bg-white rounded-2xl shadow p-6 h-full flex flex-col justify-between">
-            <AccountSummary user={userData} />
           </div>
 
           <div className="bg-white rounded-2xl shadow p-6 h-full flex items-center justify-center text-gray-400">

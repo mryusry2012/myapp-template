@@ -1,8 +1,9 @@
+// src/App.jsx
 import React, { useEffect } from "react"
-import { BrowserRouter, Routes, Route, useLocation, useNavigate } from "react-router-dom"
+import { BrowserRouter, Routes, Route, useNavigate, useLocation } from "react-router-dom"
 import { ToastContainer } from "react-toastify"
 import "react-toastify/dist/ReactToastify.css"
-import { supabase } from "@/utils/supabase" // ✅ ini betul
+import { supabase } from "@/utils/supabase"
 
 // Pages
 import Register from "./pages/Register"
@@ -19,28 +20,31 @@ function AppRoutes() {
   const navigate = useNavigate()
   const location = useLocation()
 
+  // ✅ Manual session check on every route change
   useEffect(() => {
-    const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
+    const checkSession = async () => {
       const publicPages = ["/login", "/register", "/forgot-password", "/reset-password"]
       const isPublic = publicPages.includes(location.pathname)
+
+      const session = localStorage.getItem("user")
 
       if (!session && !isPublic) {
         navigate("/login")
       }
-    })
+    }
 
-    return () => listener.subscription.unsubscribe()
+    checkSession()
   }, [location.pathname, navigate])
 
   return (
     <Routes>
-      {/* Public */}
+      {/* 🔓 Public */}
       <Route path="/register" element={<Register />} />
       <Route path="/login" element={<Login />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
 
-      {/* Protected */}
+      {/* 🔐 Protected */}
       <Route path="/dashboard" element={<Dashboard />} />
       <Route path="/update-password" element={<UpdatePassword />} />
       <Route path="/upgrade" element={<UpgradePage />} />

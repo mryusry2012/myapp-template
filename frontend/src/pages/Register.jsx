@@ -24,6 +24,7 @@ function Register() {
     formState: { errors },
   } = useForm({ resolver: yupResolver(schema) })
 
+  // ✅ Ambil referral UID dari URL (jika ada) dan simpan dalam cookie
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search)
     const ref = urlParams.get("ref")
@@ -40,7 +41,7 @@ function Register() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...form,
-          phone: `+60${form.phone}`,
+          phone: `+60${form.phone}`, // ✅ Auto Malaysia
           referral_uid,
           referred_by,
         }),
@@ -61,7 +62,7 @@ function Register() {
   }
 
   return (
-    <div className="flex items-center justify-center min-h-screen  text-gray-800">
+    <div className="flex items-center justify-center min-h-screen text-gray-800">
       <div className="w-full max-w-xl bg-white shadow-xl rounded-xl p-8 space-y-6">
         <h1 className="text-2xl font-bold text-center">Create an Account</h1>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">

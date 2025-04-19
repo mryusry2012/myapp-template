@@ -1,26 +1,28 @@
 // src/pages/UpgradePage.jsx
 import { useNavigate } from "react-router-dom"
-import { createClient } from "@supabase/supabase-js"
+import { supabase } from "@/utils/supabase"
 import { ArrowUpCircleIcon } from "@heroicons/react/24/solid"
-
-const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL,
-  import.meta.env.VITE_SUPABASE_KEY
-)
 
 export default function UpgradePage() {
   const navigate = useNavigate()
 
-  const currentUserUID = "MVM 923149 SY" // Nanti ganti dengan session/user context
-
   const handleUpgrade = async () => {
+    const storedUser = localStorage.getItem("user")
+    const user = storedUser ? JSON.parse(storedUser) : null
+
+    if (!user?.email) {
+      alert("❌ Session missing. Please login again.")
+      navigate("/login")
+      return
+    }
+
     const { error } = await supabase
       .from("users_clean_reset")
       .update({ is_paid: true })
-      .eq("referral_uid", currentUserUID)
+      .eq("email", user.email)
 
     if (error) {
-      alert("Upgrade failed: " + error.message)
+      alert("❌ Upgrade failed: " + error.message)
     } else {
       alert("✅ Upgrade successful! Welcome to the paid members team.")
       navigate("/dashboard")

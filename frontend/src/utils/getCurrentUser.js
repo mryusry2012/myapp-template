@@ -1,13 +1,16 @@
 // src/utils/getCurrentUser.js
-import { createClient } from "@supabase/supabase-js"
-
-const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL,
-  import.meta.env.VITE_SUPABASE_KEY
-)
+import { supabase } from "./supabase"
 
 export async function getCurrentUser() {
-  const { data, error } = await supabase.auth.getUser()
-  if (error || !data.user) return null
-  return data.user
+  try {
+    const { data, error } = await supabase.auth.getUser()
+    if (error || !data?.user) {
+      console.warn("❌ Supabase session missing or invalid")
+      return null
+    }
+    return data.user
+  } catch (err) {
+    console.error("❌ getCurrentUser error:", err.message)
+    return null
+  }
 }

@@ -8,10 +8,15 @@ function Layout({ children, user }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
   const navigate = useNavigate()
 
-  // ✅ Auto logout globally if no session
   useEffect(() => {
-    const storedUser = localStorage.getItem("user")
-    if (!storedUser) {
+    try {
+      const storedUser = JSON.parse(localStorage.getItem("user"))
+      if (!storedUser || !storedUser.email) {
+        console.warn("⛔ No valid session found. Redirecting to login.")
+        navigate("/login")
+      }
+    } catch (err) {
+      console.error("❌ Invalid localStorage session:", err)
       navigate("/login")
     }
   }, [navigate])
