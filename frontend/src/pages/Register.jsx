@@ -1,11 +1,15 @@
-// frontend/src/pages/Register.jsx
-
 import React, { useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { yupResolver } from "@hookform/resolvers/yup"
 import * as yup from "yup"
 import { useNavigate } from "react-router-dom"
+import { createClient } from "@supabase/supabase-js"
 import { getReferralUID, setReferralUID } from "@/utils/cookies"
+
+const supabase = createClient(
+  import.meta.env.VITE_SUPABASE_URL,
+  import.meta.env.VITE_SUPABASE_KEY
+)
 
 const schema = yup.object().shape({
   first_name: yup.string().required("First name is required"),
@@ -14,7 +18,7 @@ const schema = yup.object().shape({
   country_code: yup.string().required("Country code is required"),
   phone: yup.string().required("Phone number is required"),
   email: yup.string().email("Invalid email").required("Email is required"),
-  password: yup.string().min(6, "Password must be at least 6 characters").required("Password is required"),
+  password: yup.string().min(6, "Min 6 characters").required("Password is required"),
 })
 
 function Register() {
@@ -26,44 +30,61 @@ function Register() {
     formState: { errors },
   } = useForm({ resolver: yupResolver(schema) })
 
-  // ✅ Ambil referral UID dari URL dan simpan dalam cookie
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search)
     const ref = urlParams.get("ref")
-    if (ref) {
-      setReferralUID(ref)
-    }
+    if (ref) setReferralUID(ref)
   }, [])
 
-  const onSubmit = async (data) => {
+  const onSubmit = async (form) => {
     const referred_by = getReferralUID() || null
+    const referral_uid = `MVM ${Math.floor(100000 + Math.random() * 900000)} SY`
 
-    const response = await fetch("http://localhost:5050/api/auth/register", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...data, referred_by }),
-    })
+    try {
+      const { data: authData, error: signUpError } = await supabase.auth.signUp({
+        email: form.email,
+        password: form.password,
+      })
 
-    const result = await response.json()
+      if (signUpError) {
+        alert("❌ Registration failed: " + signUpError.message)
+        return
+      }
 
-    if (!response.ok) {
-      alert(result.error || "Registration failed")
-    } else {
-      alert("Registration successful!")
-      navigate("/login")
+      const { error: insertError } = await supabase.from("users_clean_reset").insert({
+        first_name: form.first_name,
+        last_name: form.last_name,
+        dob: form.dob,
+        phone: `${form.country_code}${form.phone}`,
+        email: form.email,
+        referral_uid,
+        referred_by,
+        komisen: 0,
+        is_paid: false,
+      })
+
+      if (insertError) {
+        alert("❌ Failed to save user profile.")
+        return
+      }
+
+      alert("✅ Registration successful!")
+      navigate("/dashboard")
+    } catch (err) {
+      console.error(err)
+      alert("❌ Something went wrong during registration.")
     }
   }
 
   return (
-    <div className="text-gray-800 flex items-center justify-center p-4">
-      <div className="w-full max-w-xl bg-[#D5E5D5] shadow-lg rounded-xl p-8 space-y-6">
-        <h1 className="text-2xl font-bold text-center">Create an Account</h1>
+    <div className="text-gray-800 flex items-center justify-center p-4 min-h-screen  from-[#D5E5D5] to-white">
+      <div className="w-full max-w-xl bg-white shadow-xl rounded-xl p-8 space-y-6">
+        <h1 className="text-2xl font-bold text-center text-gray-800">Create an Account</h1>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block mb-1 text-sm">First Name</label>
               <input
-                type="text"
                 {...register("first_name")}
                 className="w-full p-2 border rounded-md bg-white"
                 placeholder="John"
@@ -73,7 +94,6 @@ function Register() {
             <div>
               <label className="block mb-1 text-sm">Last Name</label>
               <input
-                type="text"
                 {...register("last_name")}
                 className="w-full p-2 border rounded-md bg-white"
                 placeholder="Doe"
@@ -84,11 +104,7 @@ function Register() {
 
           <div>
             <label className="block mb-1 text-sm">Date of Birth</label>
-            <input
-              type="date"
-              {...register("dob")}
-              className="w-full p-2 border rounded-md bg-white"
-            />
+            <input type="date" {...register("dob")} className="w-full p-2 border rounded-md bg-white" />
             {errors.dob && <p className="text-red-500 text-sm">{errors.dob.message}</p>}
           </div>
 
@@ -107,7 +123,6 @@ function Register() {
           <div>
             <label className="block mb-1 text-sm">Phone Number</label>
             <input
-              type="text"
               {...register("phone")}
               className="w-full p-2 border rounded-md bg-white"
               placeholder="123456789"
@@ -139,7 +154,7 @@ function Register() {
 
           <button
             type="submit"
-            className="w-full bg-blue-700 text-white py-2 rounded-md hover:bg-blue-800"
+            className="w-full bg-blue-700 text-white py-2 rounded-md hover:bg-blue-800 transition"
           >
             Register
           </button>

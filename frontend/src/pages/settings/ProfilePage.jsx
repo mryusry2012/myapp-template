@@ -1,7 +1,7 @@
-// src/pages/settings/ProfilePage.jsx
-import React, { useEffect, useState } from "react"
+import { useEffect, useState } from "react"
 import Layout from "@/components/layout/Layout"
-import { supabase, getCurrentUser } from "@/utils/supabase"
+import { getCurrentUser } from "@/utils/getCurrentUser"
+import { supabase } from "@/utils/supabase"
 
 function ProfilePage() {
   const [userData, setUserData] = useState(null)
@@ -13,25 +13,31 @@ function ProfilePage() {
     password: "",
   })
   const [loading, setLoading] = useState(true)
-  const [sessionFailed, setSessionFailed] = useState(false)
+  const [sessionMissing, setSessionMissing] = useState(false)
 
-  const fetchUserProfile = async () => {
-    const user = await getCurrentUser()
+  useEffect(() => {
+    const fetchProfile = async () => {
+      const user = await getCurrentUser()
+      if (!user) {
+        console.warn("❌ No session found.")
+        setSessionMissing(true)
+        setLoading(false)
+        return
+      }
 
-    if (!user) {
-      console.warn("🚫 No valid session after retries.")
-      setSessionFailed(true)
-      setLoading(false)
-      return
-    }
+      const { data, error } = await supabase
+        .from("users_clean_reset")
+        .select("*")
+        .eq("email", user.email)
+        .single()
 
-    const { data, error } = await supabase
-      .from("users_clean_reset")
-      .select("*")
-      .eq("email", user.email)
-      .single()
+      if (error || !data) {
+        console.warn("❌ User data not found.")
+        setSessionMissing(true)
+        setLoading(false)
+        return
+      }
 
-    if (!error && data) {
       setUserData(data)
       setForm({
         firstName: data.first_name || "",
@@ -40,25 +46,21 @@ function ProfilePage() {
         phone: data.phone || "",
         password: "",
       })
+
+      setLoading(false)
     }
 
-    setLoading(false)
-  }
+    fetchProfile()
 
-  useEffect(() => {
-    fetchUserProfile()
-
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (!session?.user) {
-        console.log("👋 Logged out, redirecting...")
-        window.location.href = "/login"
-      } else {
-        fetchUserProfile()
+    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!session) {
+        setSessionMissing(true)
+        setUserData(null)
       }
     })
 
     return () => {
-      listener?.subscription?.unsubscribe()
+      authListener?.subscription?.unsubscribe()
     }
   }, [])
 
@@ -89,16 +91,17 @@ function ProfilePage() {
   if (loading) {
     return (
       <Layout user={{ first_name: "", referral_uid: "" }}>
-        <div className="text-center py-20 text-gray-500">🔄 Checking session...</div>
+        <div className="text-center py-24 text-gray-500 text-sm">🔄 Loading profile...</div>
       </Layout>
     )
   }
 
-  if (sessionFailed) {
+  if (sessionMissing || !userData) {
     return (
       <Layout user={{ first_name: "", referral_uid: "" }}>
-        <div className="text-center py-20 text-red-500">
-          Session not found. Please <a href="/login" className="underline">login again</a>.
+        <div className="text-center py-24 text-red-500">
+          Session not found. Please{" "}
+          <a href="/login" className="underline text-indigo-600">login again</a>.
         </div>
       </Layout>
     )
@@ -107,12 +110,10 @@ function ProfilePage() {
   return (
     <Layout user={userData}>
       <div className="max-w-6xl mx-auto px-4 md:px-10 py-8 space-y-8">
-        <div>
-          <h2 className="text-2xl font-semibold text-gray-800">My Profile</h2>
-          <p className="text-gray-500 text-sm">Manage your personal information and account settings.</p>
-        </div>
+        <h2 className="text-2xl font-semibold text-gray-800">My Profile</h2>
+        <p className="text-sm text-gray-500">Manage your personal information and account settings.</p>
 
-        {/* Avatar */}
+        {/* Avatar Section */}
         <div className="flex flex-col sm:flex-row items-center gap-6 bg-white p-6 rounded-2xl shadow">
           <img
             src="https://i.pravatar.cc/120"
@@ -129,7 +130,7 @@ function ProfilePage() {
           </div>
         </div>
 
-        {/* Form */}
+        {/* Update Form */}
         <form onSubmit={handleSubmit} className="bg-white p-6 rounded-2xl shadow space-y-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
